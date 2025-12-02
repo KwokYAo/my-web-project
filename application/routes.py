@@ -51,9 +51,9 @@ def logout():
 # Handles Prediction Dashboard
 @app.route('/predict', methods=['GET', 'POST'])
 def predict():
-    if 'user' not in session: 
-        flash("Please login to access the dashboard.", "warning")
-        return redirect(url_for('login'))
+    # if 'user' not in session: 
+    #     flash("Please login to access the dashboard.", "warning")
+    #     return redirect(url_for('login'))
     
     prediction_text = None
     
