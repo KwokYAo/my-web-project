@@ -7,74 +7,88 @@
 </div>
 
 <div style="display: flex; gap: 40px; align-items: flex-start;">
-    
+
+    <!-- LEFT: FORM -->
     <div class="card" style="flex: 2;">
         <h3 class="card-title">
             <i class="ri-file-list-3-line" style="margin-right: 10px; color: var(--primary);"></i>Property Details
         </h3>
-        
-        {% if error %}
-        <div style="background: #ffebee; color: var(--danger); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-            <i class="ri-error-warning-fill"></i> {{ error }}
-        </div>
-        {% endif %}
 
-        <form action="{{ url_for('predict') }}" method="POST">
-            
+        <!-- Display Form Errors -->
+        {% for field, errors in form.errors.items() %}
+        {% for error in errors %}
+        <div style="background: #ffebee; color: var(--danger); padding: 10px; border-radius: 5px; margin-bottom: 10px;">
+            <strong>{{ field }}:</strong> {{ error }}
+        </div>
+        {% endfor %}
+        {% endfor %}
+
+        <!-- Point form to current URL -->
+        <form method="POST" novalidate>
+            {{ form.hidden_tag() }} <!-- CSRF TOKEN (Required for security) -->
+
+            <!-- 1. Overall Quality -->
             <div class="form-group">
                 <label>
-                    Overall Material Quality 
+                    {{ form.overall_qual.label }}
                     <span style="color: var(--primary);"><span id="qualVal">5</span> / 10</span>
                 </label>
-                <input type="range" name="OverallQual" min="1" max="10" value="5" oninput="document.getElementById('qualVal').innerText = this.value">
+                <!-- Render field with specific attributes for slider -->
+                {{ form.overall_qual(type="range", min="1", max="10", value="5",
+                oninput="document.getElementById('qualVal').innerText = this.value") }}
+                <div
+                    style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #95a5a6; margin-top: 5px;">
+                    <span>Poor</span><span>Average</span><span>Excellent</span>
+                </div>
             </div>
 
+            <!-- 2. Living Area -->
             <div class="form-group">
-                <label>Living Area (sq ft)</label>
-                <input type="number" name="GrLivArea" class="input-field" placeholder="e.g. 1500" required>
+                {{ form.gr_liv_area.label }}
+                <!-- Passing CSS class to WTF -->
+                {{ form.gr_liv_area(class="input-field", placeholder="e.g. 1500") }}
             </div>
 
             <div style="display: flex; gap: 20px;">
+                <!-- 3. Garage -->
                 <div class="form-group" style="flex: 1;">
-                    <label>Garage Capacity</label>
-                    <select name="GarageCars" class="input-field">
-                        <option value="0">No Garage</option>
-                        <option value="1">1 Car</option>
-                        <option value="2" selected>2 Cars</option>
-                        <option value="3">3 Cars</option>
-                        <option value="4">4+ Cars</option>
-                    </select>
+                    {{ form.garage_cars.label }}
+                    {{ form.garage_cars(class="input-field") }}
                 </div>
+
+                <!-- 4. Basement -->
                 <div class="form-group" style="flex: 1;">
-                    <label>Basement Area (sq ft)</label>
-                    <input type="number" name="TotalBsmtSF" class="input-field" placeholder="e.g. 800" required>
+                    {{ form.total_bsmt_sf.label }}
+                    {{ form.total_bsmt_sf(class="input-field", placeholder="e.g. 800") }}
                 </div>
             </div>
 
+            <!-- 5. Year Built -->
             <div class="form-group">
-                <label>Year Built</label>
-                <input type="number" name="YearBuilt" class="input-field" placeholder="e.g. 1995" min="1800" max="2026" required>
+                {{ form.year_built.label }}
+                {{ form.year_built(class="input-field", placeholder="e.g. 1995") }}
             </div>
 
-            <button type="submit" class="btn btn-primary" style="margin-top: 10px;">
-                <i class="ri-calculator-line"></i> Calculate Price
-            </button>
+            <!-- Submit Button -->
+            {{ form.submit(class="btn btn-primary", style="margin-top: 10px;") }}
         </form>
     </div>
 
-    <div class="card" style="flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: center; min-height: 400px;">
+    <!-- RIGHT: RESULT -->
+    <div class="card"
+        style="flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: center; min-height: 400px;">
         <h4 style="color: #95a5a6; letter-spacing: 1px;">ESTIMATED VALUE</h4>
-        
+
         {% if prediction %}
-            <h1 style="font-size: 3.5rem; color: var(--success); margin: 20px 0;">${{ prediction }}</h1>
-            <span style="background: #e8f5e9; color: var(--success); padding: 8px 16px; border-radius: 20px; font-size: 0.9rem; font-weight: 600;">
-                <i class="ri-checkbox-circle-fill"></i> High Confidence
-            </span>
+        <h1 style="font-size: 3.5rem; color: var(--success); margin: 20px 0;">${{ prediction }}</h1>
+        <span
+            style="background: #e8f5e9; color: var(--success); padding: 8px 16px; border-radius: 20px; font-size: 0.9rem; font-weight: 600;">
+            <i class="ri-checkbox-circle-fill"></i> High Confidence
+        </span>
         {% else %}
-            <h1 style="font-size: 3.5rem; color: #e0e0e0; margin: 20px 0;">$ ---,---</h1>
-            <p style="color: #bdc3c7;">Fill out the form to see result.</p>
+        <h1 style="font-size: 3.5rem; color: #e0e0e0; margin: 20px 0;">$ ---,---</h1>
+        <p style="color: #bdc3c7;">Fill out the form to see result.</p>
         {% endif %}
     </div>
-
 </div>
 {% endblock %}
