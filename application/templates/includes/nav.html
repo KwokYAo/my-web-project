@@ -1,0 +1,20 @@
+<nav class="sidebar">
+    <div class="brand">
+        <i class="ri-home-gear-fill" style="margin-right: 10px;"></i>AMES.AI
+    </div>
+
+    <div class="menu-label">Main Menu</div>
+    
+    <a href="{{ url_for('predict') }}" class="nav-link">
+        <i class="ri-dashboard-line" style="margin-right: 10px;"></i> Dashboard
+    </a>
+    
+    <a href="{{ url_for('history') }}" class="nav-link">
+        <i class="ri-history-line" style="margin-right: 10px;"></i> History
+    </a>
+
+    <div class="menu-label" style="margin-top: auto;">Account</div>
+    <a href="{{ url_for('logout') }}" class="nav-link">
+        <i class="ri-logout-box-line" style="margin-right: 10px;"></i> Logout
+    </a>
+</nav>

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="text-align: center; margin-top: 50px;">
+    <!-- Big Icon -->
+    <i class="ri-home-heart-fill" style="font-size: 5rem; color: var(--primary);"></i>
+    
+    <!-- Welcome Text -->
+    <h1 style="font-size: 3.5rem; margin-bottom: 20px;">Welcome to Ames AI</h1>
+    <p style="font-size: 1.2rem; color: #7f8c8d; max-width: 600px; margin: 0 auto;">
+        An advanced Machine Learning application designed to predict housing prices 
+        based on key architectural features.
+    </p>
+
+    <!-- Call to Action Buttons -->
+    <div style="margin-top: 50px; display: flex; gap: 20px; justify-content: center;">
+        {% if session.get('user') %}
+            <!-- If logged in, go to Dashboard -->
+            <a href="{{ url_for('predict') }}" class="btn btn-primary" style="width: auto; padding: 15px 40px;">
+                Start Predicting <i class="ri-arrow-right-line"></i>
+            </a>
+        {% else %}
+            <!-- If not logged in, go to Login -->
+            <a href="{{ url_for('login') }}" class="btn btn-primary" style="width: auto; padding: 15px 40px;">
+                Login to Start <i class="ri-login-box-line"></i>
+            </a>
+        {% endif %}
+    </div>
+    
+    <!-- Feature Cards (Visual Flair) -->
+    <div style="margin-top: 80px; display: flex; gap: 30px; justify-content: center;">
+        <div class="card" style="width: 200px; text-align: center;">
+            <i class="ri-database-2-line" style="font-size: 2rem; color: var(--primary);"></i>
+            <h3>Reliable Data</h3>
+            <p style="font-size: 0.9rem; color: #95a5a6;">Trained on 2900+ verified records.</p>
+        </div>
+        <div class="card" style="width: 200px; text-align: center;">
+            <i class="ri-speed-up-line" style="font-size: 2rem; color: var(--success);"></i>
+            <h3>Fast Results</h3>
+            <p style="font-size: 0.9rem; color: #95a5a6;">Instant valuations in real-time.</p>
+        </div>
+        <div class="card" style="width: 200px; text-align: center;">
+            <i class="ri-shield-check-line" style="font-size: 2rem; color: var(--danger);"></i>
+            <h3>Secure</h3>
+            <p style="font-size: 0.9rem; color: #95a5a6;">Your history is private and protected.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

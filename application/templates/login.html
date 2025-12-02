@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - Ames AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link href="[https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css](https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css)" rel="stylesheet">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-brand-section">
+            <i class="ri-home-gear-fill" style="font-size: 5rem; margin-bottom: 20px;"></i>
+            <h1 style="font-size: 3rem; margin: 0;">AMES</h1>
+            <p style="font-size: 1.2rem; opacity: 0.8;">Advanced Housing Price Predictor</p>
+        </div>
+
+        <div class="login-form-section">
+            <div class="login-card">
+                <h2 style="margin-bottom: 10px; font-size: 2rem;">Welcome Back</h2>
+                <p style="color: #7f8c8d; margin-bottom: 40px;">Please enter your details to sign in.</p>
+                
+                {% if error %}
+                <div style="background: #ffebee; color: var(--danger); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <i class="ri-error-warning-fill" style="margin-right: 8px;"></i> {{ error }}
+                </div>
+                {% endif %}
+
+                <form action="" method="POST">
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" name="username" class="input-field" placeholder="e.g., admin" required>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 40px;">
+                        <label>Password</label>
+                        <input type="password" name="password" class="input-field" placeholder="Your password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        Sign In <i class="ri-arrow-right-line" style="margin-left: 5px;"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

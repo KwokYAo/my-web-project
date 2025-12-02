@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Prediction Archive</h1>
+    <p class="page-subtitle">Manage your past property valuations.</p>
+</div>
+
+<div class="card" style="padding: 0; overflow: hidden;">
+    <table class="history-table">
+        <thead>
+            <tr>
+                <th style="padding-left: 30px;">Date & Time</th>
+                <th>Details (Summary)</th>
+                <th>Price</th>
+                <th style="text-align: right; padding-right: 30px;">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in history %}
+            <tr>
+                <td style="padding-left: 30px; color: #7f8c8d;">{{ row['timestamp'] }}</td>
+                <td>
+                    <span style="background: #f4f7f6; padding: 5px 10px; border-radius: 5px; font-size: 0.85rem;">
+                        <strong>Q:</strong> {{ row['overall_qual'] }}
+                    </span>
+                    <span style="background: #f4f7f6; padding: 5px 10px; border-radius: 5px; font-size: 0.85rem;">
+                        <strong>Area:</strong> {{ row['gr_liv_area'] }}
+                    </span>
+                    <span style="background: #f4f7f6; padding: 5px 10px; border-radius: 5px; font-size: 0.85rem;">
+                        <strong>Yr:</strong> {{ row['year_built'] }}
+                    </span>
+                </td>
+                <td class="prediction-value">${{ "{:,.2f}".format(row['prediction']) }}</td>
+                <td style="text-align: right; padding-right: 30px;">
+                    <a href="{{ url_for('delete_history', id=row['id']) }}" class="btn btn-delete">
+                        <i class="ri-delete-bin-line"></i> Delete
+                    </a>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" style="text-align: center; padding: 50px; color: #bdc3c7;">No history found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

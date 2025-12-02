@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Prediction Dashboard</h1>
+    <p class="page-subtitle">Enter property details to estimate market value.</p>
+</div>
+
+<div style="display: flex; gap: 40px; align-items: flex-start;">
+    
+    <div class="card" style="flex: 2;">
+        <h3 class="card-title">
+            <i class="ri-file-list-3-line" style="margin-right: 10px; color: var(--primary);"></i>Property Details
+        </h3>
+        
+        {% if error %}
+        <div style="background: #ffebee; color: var(--danger); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <i class="ri-error-warning-fill"></i> {{ error }}
+        </div>
+        {% endif %}
+
+        <form action="{{ url_for('predict') }}" method="POST">
+            
+            <div class="form-group">
+                <label>
+                    Overall Material Quality 
+                    <span style="color: var(--primary);"><span id="qualVal">5</span> / 10</span>
+                </label>
+                <input type="range" name="OverallQual" min="1" max="10" value="5" oninput="document.getElementById('qualVal').innerText = this.value">
+            </div>
+
+            <div class="form-group">
+                <label>Living Area (sq ft)</label>
+                <input type="number" name="GrLivArea" class="input-field" placeholder="e.g. 1500" required>
+            </div>
+
+            <div style="display: flex; gap: 20px;">
+                <div class="form-group" style="flex: 1;">
+                    <label>Garage Capacity</label>
+                    <select name="GarageCars" class="input-field">
+                        <option value="0">No Garage</option>
+                        <option value="1">1 Car</option>
+                        <option value="2" selected>2 Cars</option>
+                        <option value="3">3 Cars</option>
+                        <option value="4">4+ Cars</option>
+                    </select>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label>Basement Area (sq ft)</label>
+                    <input type="number" name="TotalBsmtSF" class="input-field" placeholder="e.g. 800" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Year Built</label>
+                <input type="number" name="YearBuilt" class="input-field" placeholder="e.g. 1995" min="1800" max="2026" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="margin-top: 10px;">
+                <i class="ri-calculator-line"></i> Calculate Price
+            </button>
+        </form>
+    </div>
+
+    <div class="card" style="flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: center; min-height: 400px;">
+        <h4 style="color: #95a5a6; letter-spacing: 1px;">ESTIMATED VALUE</h4>
+        
+        {% if prediction %}
+            <h1 style="font-size: 3.5rem; color: var(--success); margin: 20px 0;">${{ prediction }}</h1>
+            <span style="background: #e8f5e9; color: var(--success); padding: 8px 16px; border-radius: 20px; font-size: 0.9rem; font-weight: 600;">
+                <i class="ri-checkbox-circle-fill"></i> High Confidence
+            </span>
+        {% else %}
+            <h1 style="font-size: 3.5rem; color: #e0e0e0; margin: 20px 0;">$ ---,---</h1>
+            <p style="color: #bdc3c7;">Fill out the form to see result.</p>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}
