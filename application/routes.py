@@ -1,91 +1,100 @@
 from application import app
-from flask import render_template, request, redirect, url_for, session, flash ,jsonify
-from application.form import PredictionForm
-import pandas as pd 
-# --- ROUTES ---
+from flask import render_template, request, redirect, url_for, session, flash, jsonify
+from application.form import PredictionForm, LoginForm
+import sqlite3
+import joblib
+import pandas as pd
 
-@app.route('/hello')
-def hello_world():
-    return "<h1>Hello Ames Housing AI</h1>"
+# Load Model
+try:
+    model = joblib.load('housing_model.pkl')
+except:
+    model = None
+
+def get_db():
+    conn = sqlite3.connect('housing.db')
+    conn.row_factory = sqlite3.Row
+    return conn
+
+# --- ROUTES ---
 
 @app.route('/')
 @app.route('/index')
 @app.route('/home')
 def index():
-    return render_template("index.html", title="Welcome to Ames AI")
+    return render_template("index.html")
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    # Mock Login for Visual Testing
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
+    form = LoginForm()
+    if form.validate_on_submit():
+        username = form.username.data
+        password = form.password.data
         
-        if password == 'password':
+        conn = get_db()
+        user = conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+        conn.close()
+
+        if user and user['password'] == password:
             session['user'] = username
             flash(f"Welcome back, {username}!", "success")
             return redirect(url_for('predict'))
         else:
-            flash("Invalid Credentials (Try password: 'password')", "danger")
+            flash("Invalid Credentials", "danger")
             
-    return render_template('login.html')
+    return render_template('login.html', form=form)
 
 @app.route('/logout')
 def logout():
     session.pop('user', None)
-    flash("Logged out successfully.", "info")
     return redirect(url_for('login'))
 
-# --- PREDICT ROUTE (Adapted from Iris Example) ---
 @app.route('/predict', methods=['GET', 'POST'])
 def predict():
     if 'user' not in session: return redirect(url_for('login'))
     
-    # 1. Initialize the Form
     form = PredictionForm()
     prediction_text = None
     
-    # 2. Handle POST Request
     if request.method == 'POST':
-        
-        # 3. Check Validation (WTF Logic)
         if form.validate_on_submit():
-            # Extraction (Clean data from WTF)
+            # Clean Data from Form
             qual = form.overall_qual.data
             area = form.gr_liv_area.data
             cars = form.garage_cars.data
             bsmt = form.total_bsmt_sf.data
             year = form.year_built.data
             
-            # --- MOCK PREDICTION (Since model is not loaded) ---
-            # We just calculate a dummy number to prove the flow works
-            dummy_result = (qual * 5000) + (area * 100) + (year * 10)
-            prediction_text = f"{dummy_result:,.2f}"
+            # --- MOCK PREDICTION FORMULA (For Visual Testing) ---
+            # Formula: (Quality * 15,000) + (Area * 75) + (Garage * 5000) + (Basement * 50) + (Year * 10)
+            pred_value = (qual * 15000) + (area * 75) + (cars * 5000) + (bsmt * 50) + (year * 10)
+            prediction_text = f"{pred_value:,.2f}"
             
-            flash(f"Success! Form Validated. Mock Price: ${prediction_text}", "success")
-            
-            # (Note: Database saving is removed as requested)
-            
+            flash(f"Success! Estimated Value: ${prediction_text}", "success")
         else:
-            # 4. Handle Failure
-            # If validators fail (e.g., negative area), this runs.
-            # Errors are automatically sent to the form object.
-            flash("Error: Cannot proceed with prediction. Check fields below.", "danger")
+            flash("Error, cannot proceed with prediction", "danger")
 
-    # 5. Render Template
-    # Crucial: Pass 'form=form' so the HTML can show the red error messages
-    return render_template('predict.html', 
-                           title="Predict House Price", 
-                           form=form, 
-                           prediction=prediction_text)
+    return render_template('predict.html', form=form, prediction=prediction_text)
 
-# (History routes temporarily removed or mocked if needed)
 @app.route('/history')
 def history():
     if 'user' not in session: return redirect(url_for('login'))
-    return render_template('history.html', history=[]) # Empty list for now
+    conn = get_db()
+    rows = conn.execute('SELECT * FROM history WHERE username = ? ORDER BY timestamp DESC', (session['user'],)).fetchall()
+    conn.close()
+    return render_template('history.html', history=rows)
 
+@app.route('/delete_history/<int:id>')
+def delete_history(id):
+    if 'user' not in session: return redirect(url_for('login'))
+    conn = get_db()
+    conn.execute('DELETE FROM history WHERE id = ?', (id,))
+    conn.commit()
+    conn.close()
+    flash("Record deleted.", "info")
+    return redirect(url_for('history'))
 
+# --- API ROUTE (Added for future use) ---
 @app.route('/api/predict', methods=['POST'])
 def api_predict():
     # 1. Check if the request is JSON (Machine talk), not a Form (Human talk)
