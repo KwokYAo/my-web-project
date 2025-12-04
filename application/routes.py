@@ -1,6 +1,6 @@
 from application import app
 from flask import render_template, request, redirect, url_for, session, flash ,jsonify
-from application.form import PredictionForm
+from application.form import PredictionForm,LoginForm
 import pandas as pd 
 # --- ROUTES ---
 
@@ -14,13 +14,16 @@ def hello_world():
 def index():
     return render_template("index.html", title="Welcome to Ames AI")
 
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    # Mock Login for Visual Testing
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
+    form = LoginForm()
+    if form.validate_on_submit():
+        username = form.username.data
+        password = form.password.data
         
+        # --- SIMPLE MOCK LOGIN (No Database Required) ---
+        # Accepts ANY username, as long as password is 'password'
         if password == 'password':
             session['user'] = username
             flash(f"Welcome back, {username}!", "success")
@@ -28,7 +31,7 @@ def login():
         else:
             flash("Invalid Credentials (Try password: 'password')", "danger")
             
-    return render_template('login.html')
+    return render_template('login.html', form=form)
 
 @app.route('/logout')
 def logout():
@@ -86,30 +89,30 @@ def history():
     return render_template('history.html', history=[]) # Empty list for now
 
 
-@app.route('/api/predict', methods=['POST'])
-def api_predict():
-    # 1. Check if the request is JSON (Machine talk), not a Form (Human talk)
-    if request.is_json:
-        data = request.get_json()
+# @app.route('/api/predict', methods=['POST'])
+# def api_predict():
+#     # 1. Check if the request is JSON (Machine talk), not a Form (Human talk)
+#     if request.is_json:
+#         data = request.get_json()
         
-        # 2. Extract data safely
-        try:
-            qual = int(data.get('OverallQual'))
-            area = int(data.get('GrLivArea'))
-            cars = int(data.get('GarageCars'))
-            bsmt = int(data.get('TotalBsmtSF'))
-            year = int(data.get('YearBuilt'))
+#         # 2. Extract data safely
+#         try:
+#             qual = int(data.get('OverallQual'))
+#             area = int(data.get('GrLivArea'))
+#             cars = int(data.get('GarageCars'))
+#             bsmt = int(data.get('TotalBsmtSF'))
+#             year = int(data.get('YearBuilt'))
             
-            input_df = pd.DataFrame([[qual, area, cars, bsmt, year]], 
-                                    columns=['OverallQual', 'GrLivArea', 'GarageCars', 'TotalBsmtSF', 'YearBuilt'])
+#             input_df = pd.DataFrame([[qual, area, cars, bsmt, year]], 
+#                                     columns=['OverallQual', 'GrLivArea', 'GarageCars', 'TotalBsmtSF', 'YearBuilt'])
             
-            if model:
-                prediction = model.predict(input_df)[0]
-                return jsonify({'prediction': prediction, 'status': 'success'}), 200
-            else:
-                return jsonify({'error': 'Model not loaded'}), 500
+#             if model:
+#                 prediction = model.predict(input_df)[0]
+#                 return jsonify({'prediction': prediction, 'status': 'success'}), 200
+#             else:
+#                 return jsonify({'error': 'Model not loaded'}), 500
                 
-        except Exception as e:
-            return jsonify({'error': str(e)}), 400
+#         except Exception as e:
+#             return jsonify({'error': str(e)}), 400
             
-    return jsonify({'error': 'Request must be JSON'}), 415
+#     return jsonify({'error': 'Request must be JSON'}), 415
