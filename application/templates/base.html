@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ames Housing AI</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-    <link href="[https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css](https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css)" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 </head>
 <body>
 
@@ -13,6 +13,21 @@
     {% include 'includes/nav.html' %}
 
     <main class="main-content">
+        
+        <!-- [NEW] FLASH MESSAGE SECTION -->
+        <!-- This code catches the "Success!" or "Error" messages from Python -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div style="padding: 15px; border-radius: 8px; margin-bottom: 20px; 
+                                background: {% if category=='success' %}#e8f5e9{% else %}#ffebee{% endif %}; 
+                                color: {% if category=='success' %}#2ecc71{% else %}#e74c3c{% endif %};">
+                        <strong>{{ message }}</strong>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
         <!-- Content Block -->
         {% block content %}
         {% endblock %}
