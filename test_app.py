@@ -4,8 +4,7 @@ from application import app
 @pytest.fixture
 def client():
     app.config['TESTING'] = True
-    app.config['WTF_CSRF_ENABLED'] = False  # <--- ADD THIS LINE!
-    # (This tells Flask-WTF: "Trust me, I'm a test, don't check for tokens")
+    app.config['WTF_CSRF_ENABLED'] = False  
     
     with app.test_client() as client:
         with client.session_transaction() as sess:
@@ -43,7 +42,7 @@ def test_future_year_rejection(client):
         'year_built': 3000  # Invalid!
     }, follow_redirects=True)
     
-    assert b"Year must be between 1800 and 2030" in response.data
+    assert b"Year must be between 1900 and 2030" in response.data
 
 # --- TEST 3: Consistency/Happy Path ---
 def test_valid_prediction(client):
