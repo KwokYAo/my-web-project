@@ -1,9 +1,10 @@
-from application import app
+from application import app, db
 from flask import render_template, request, redirect, url_for, session, flash, jsonify
-from application.forms import PredictionForm, LoginForm
-import sqlite3
-import joblib
+from application.form import PredictionForm, LoginForm
+from application.models import Entry
+from datetime import datetime
 import pandas as pd
+import joblib
 
 # Load Model
 try:
@@ -11,10 +12,39 @@ try:
 except:
     model = None
 
-def get_db():
-    conn = sqlite3.connect('housing.db')
-    conn.row_factory = sqlite3.Row
-    return conn
+# --- HELPER FUNCTIONS (From Practical 5) ---
+def add_entry(new_entry):
+    try:
+        db.session.add(new_entry)
+        db.session.commit()
+        return new_entry.id
+    except Exception as error:
+        db.session.rollback()
+        flash(error, "danger")
+        return 0
+
+def get_entries():
+    try:
+        # Fetch entries only for the logged-in user
+        if 'user' in session:
+            entries = Entry.query.filter_by(username=session['user']).order_by(Entry.predicted_on.desc()).all()
+            return entries
+        return []
+    except Exception as error:
+        db.session.rollback()
+        flash(error, "danger")
+        return []
+
+def remove_entry(id):
+    try:
+        entry = Entry.query.get(id)
+        if entry:
+            db.session.delete(entry)
+            db.session.commit()
+            flash("Record deleted successfully.", "success")
+    except Exception as error:
+        db.session.rollback()
+        flash(error, "danger")
 
 # --- ROUTES ---
 
@@ -31,13 +61,13 @@ def login():
         username = form.username.data
         password = form.password.data
         
-        # --- FIXED LOGIN LOGIC (From your fix branch) ---
+        # MOCK LOGIN (Replace with real User model query if you want full DB login)
         if password == 'password':
             session['user'] = username
             flash(f"Welcome back, {username}!", "success")
             return redirect(url_for('predict'))
         else:
-            flash("Invalid Credentials (Try password: 'password')", "danger")
+            flash("Invalid Credentials", "danger")
             
     return render_template('login.html', form=form)
 
@@ -53,56 +83,58 @@ def predict():
     form = PredictionForm()
     prediction_text = None
     
-    # --- FIXED PREDICT LOGIC (From your feature branch) ---
-    if request.method == 'POST':
-        if form.validate_on_submit():
-            # Clean Data from Form
-            qual = form.overall_qual.data
-            area = form.gr_liv_area.data
-            cars = form.garage_cars.data
-            bsmt = form.total_bsmt_sf.data
-            year = form.year_built.data
-            
-            # --- MOCK PREDICTION FORMULA (For Visual Testing) ---
-            pred_value = (qual * 15000) + (area * 75) + (cars * 5000) + (bsmt * 50) + (year * 10)
+    if form.validate_on_submit():
+        # 1. Get Data
+        qual = form.overall_qual.data
+        area = form.gr_liv_area.data
+        cars = form.garage_cars.data
+        bsmt = form.total_bsmt_sf.data
+        year = form.year_built.data
+        
+        # 2. Predict
+        input_df = pd.DataFrame([[qual, area, cars, bsmt, year]], 
+                                columns=['OverallQual', 'GrLivArea', 'GarageCars', 'TotalBsmtSF', 'YearBuilt'])
+        
+        if model:
+            pred_value = model.predict(input_df)[0]
             prediction_text = f"{pred_value:,.2f}"
+            
+            # 3. SAVE TO DB (Using SQLAlchemy Model)
+            new_entry = Entry(
+                username=session['user'],
+                overall_qual=qual,
+                gr_liv_area=area,
+                garage_cars=cars,
+                total_bsmt_sf=bsmt,
+                year_built=year,
+                prediction=pred_value,
+                predicted_on=datetime.utcnow()
+            )
+            add_entry(new_entry)
             
             flash(f"Success! Estimated Value: ${prediction_text}", "success")
         else:
-            flash("Error, cannot proceed with prediction", "danger")
+            flash("Error: AI Model not loaded.", "danger")
 
     return render_template('predict.html', form=form, prediction=prediction_text)
 
 @app.route('/history')
 def history():
     if 'user' not in session: return redirect(url_for('login'))
-    conn = get_db()
-    try:
-        rows = conn.execute('SELECT * FROM history WHERE username = ? ORDER BY timestamp DESC', (session['user'],)).fetchall()
-        conn.close()
-        return render_template('history.html', history=rows)
-    except:
-        return render_template('history.html', history=[])
+    # Use the helper function to get data
+    entries = get_entries()
+    return render_template('history.html', history=entries)
 
 @app.route('/delete_history/<int:id>')
 def delete_history(id):
     if 'user' not in session: return redirect(url_for('login'))
-    conn = get_db()
-    conn.execute('DELETE FROM history WHERE id = ?', (id,))
-    conn.commit()
-    conn.close()
-    flash("Record deleted.", "info")
+    remove_entry(id)
     return redirect(url_for('history'))
 
-# --- API ROUTE (Placeholder) ---
+# --- API ROUTE ---
 @app.route('/api/predict', methods=['POST'])
 def api_predict():
     if request.is_json:
-        data = request.get_json()
-        try:
-            qual = int(data.get('OverallQual'))
-            # ... (rest of logic) ...
-            return jsonify({'prediction': 150000, 'status': 'success (mock)'}), 200
-        except Exception as e:
-            return jsonify({'error': str(e)}), 400
+        # ... (Keep your API logic here) ...
+        return jsonify({'status': 'API Working'}), 200
     return jsonify({'error': 'Request must be JSON'}), 415
