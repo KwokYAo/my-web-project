@@ -19,7 +19,7 @@
         <tbody>
             {% for row in history %}
             <tr>
-                <td style="padding-left: 30px; color: #7f8c8d;">{{ row['timestamp'] }}</td>
+                <td style="padding-left: 30px; color: #7f8c8d;">{{ row.predicted_on.strftime('%Y-%m-%d %H:%M')}}</td>
                 <td>
                     <span style="background: #f4f7f6; padding: 5px 10px; border-radius: 5px; font-size: 0.85rem;">
                         <strong>Q:</strong> {{ row['overall_qual'] }}
@@ -39,7 +39,9 @@
                 </td>
             </tr>
             {% else %}
-            <tr><td colspan="4" style="text-align: center; padding: 50px; color: #bdc3c7;">No history found.</td></tr>
+            <tr>
+                <td colspan="4" style="text-align: center; padding: 50px; color: #bdc3c7;">No history found.</td>
+            </tr>
             {% endfor %}
         </tbody>
     </table>

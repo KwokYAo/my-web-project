@@ -18,7 +18,7 @@ class Entry(db.Model):
     
     # The Result
     prediction = db.Column(db.Float, nullable=False)
-    predicted_on = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    predicted_on = db.Column(db.DateTime, nullable=False, default=datetime.now)
 
     def __repr__(self):
         return f'<Entry {self.id}: {self.username} - ${self.prediction}>'
