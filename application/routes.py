@@ -1,18 +1,17 @@
 from application import app, db
 from flask import render_template, request, redirect, url_for, session, flash, jsonify
-from application.form import PredictionForm, LoginForm
-from application.models import Entry
+from application.form import PredictionForm, LoginForm,RegisterForm
+from application.models import Entry,User
 from datetime import datetime
 import pandas as pd
 import joblib
 
-# Load Model
+
 try:
     model = joblib.load('housing_model.pkl')
 except:
     model = None
 
-# --- HELPER FUNCTIONS (From Practical 5) ---
 def add_entry(new_entry):
     try:
         db.session.add(new_entry)
@@ -54,6 +53,26 @@ def remove_entry(id):
 def index():
     return render_template("index.html")
 
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    form = RegisterForm()
+    if form.validate_on_submit():
+        try:
+            # Create new user
+            new_user = User(username=form.username.data, password=form.password.data)
+            db.session.add(new_user)
+            db.session.commit()
+            
+            flash(f"Account created for {form.username.data}! Please login.", "success")
+            return redirect(url_for('login'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Error: {e}", "danger")
+            
+    return render_template('register.html', form=form)
+
+# 2. UPDATED LOGIN ROUTE (Connects to DB)
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
@@ -61,13 +80,16 @@ def login():
         username = form.username.data
         password = form.password.data
         
-        # MOCK LOGIN (Replace with real User model query if you want full DB login)
-        if password == 'password':
-            session['user'] = username
-            flash(f"Welcome back, {username}!", "success")
+        # Query the Database
+        user = User.query.filter_by(username=username).first()
+
+        # Check if user exists AND password matches
+        if user and user.password == password:
+            session['user'] = user.username
+            flash(f"Welcome back, {user.username}!", "success")
             return redirect(url_for('predict'))
         else:
-            flash("Invalid Credentials", "danger")
+            flash("Invalid Username or Password", "danger")
             
     return render_template('login.html', form=form)
 

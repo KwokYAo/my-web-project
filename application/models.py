@@ -1,11 +1,19 @@
 from application import db
 from datetime import datetime
 
-class Entry(db.Model):
-    # This defines the table name 'entry' (or 'history' if you prefer)
-    # SQLAlchemy will default to 'entry' based on class name unless specified
-    __tablename__ = 'history'
+# 1. The User Table (For Login/Register)
+class User(db.Model):
+    __tablename__ = 'users'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(50), unique=True, nullable=False)
+    password = db.Column(db.String(50), nullable=False) 
 
+    def __repr__(self):
+        return f'<User {self.username}>'
+
+# 2. The History Table (For Predictions)
+class Entry(db.Model):
+    __tablename__ = 'history'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), nullable=False)
     
@@ -21,4 +29,4 @@ class Entry(db.Model):
     predicted_on = db.Column(db.DateTime, nullable=False, default=datetime.now)
 
     def __repr__(self):
-        return f'<Entry {self.id}: {self.username} - ${self.prediction}>'
+        return f'<Entry {self.id}: {self.prediction}>'

@@ -1,6 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, IntegerField, SelectField
-from wtforms.validators import InputRequired, Length, NumberRange, ValidationError
+from wtforms.validators import InputRequired, Length, NumberRange, ValidationError,EqualTo
+from application.models import User
 
 class PredictionForm(FlaskForm):
     # 1. Overall Quality (1-10)
@@ -44,6 +45,29 @@ class PredictionForm(FlaskForm):
         if year_built.data is None:
              raise ValidationError("Invalid input: Please enter a numeric year.")
         
+
+class RegisterForm(FlaskForm):
+    username = StringField('Username', validators=[
+        InputRequired(), 
+        Length(min=4, max=25, message="Username must be 4-25 chars")
+    ])
+    password = PasswordField('Password', validators=[
+        InputRequired(), 
+        Length(min=4, message="Password must be at least 4 chars")
+    ])
+    confirm_password = PasswordField('Confirm Password', validators=[
+        InputRequired(), 
+        EqualTo('password', message="Passwords must match")
+    ])
+    submit = SubmitField('Register Account')
+
+    # Custom Validator: Check if username already exists
+    def validate_username(self, username):
+        user = User.query.filter_by(username=username.data).first()
+        if user:
+            raise ValidationError('Username already exists. Please choose another.')
+
+
 
 class LoginForm(FlaskForm):
     username = StringField('Username', validators=[

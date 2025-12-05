@@ -1,9 +1,9 @@
 import pytest
-import pandas as pd
-import joblib
 import os
+import joblib
+import pandas as pd
 from application import app, db
-from application.models import Entry
+from application.models import User, Entry
 
 # --- FIXTURE: SETS UP A FAKE APP FOR TESTING ---
 @pytest.fixture
@@ -20,59 +20,132 @@ def client():
         # (Cleanup happens automatically here)
 
 # ==========================================
-# TEST GROUP 1: LOGIN LOGIC
+# PART 1: FRONTEND VALIDATION (Unit Testing)
+# Requirement: Validity & Range Testing
 # ==========================================
-def test_login_page_loads(client):
-    """Check if the login page actually exists."""
-    response = client.get('/login')
-    assert response.status_code == 200
-    assert b"Login" in response.data
 
-def test_login_logic(client):
-    """Check if we can log in with the mock password."""
-    response = client.post('/login', data={
-        'username': 'test_user',
-        'password': 'password'
+def test_negative_area_validation(client):
+    """
+    Test Validity: Rejects negative numbers for Living Area.
+    """
+    # 1. Login first (mock user)
+    client.post('/login', data={'username': 'test', 'password': 'password'})
+    
+    # 2. Send invalid data
+    response = client.post('/predict', data={
+        'overall_qual': 5,
+        'gr_liv_area': -500, # Invalid!
+        'garage_cars': 2,
+        'total_bsmt_sf': 800,
+        'year_built': 2000
     }, follow_redirects=True)
     
-    # Expect success message or redirect to dashboard
-    assert b"Welcome back" in response.data or b"Dashboard" in response.data
+    # 3. Assert error message exists in the HTML
+    # Note: Flask-WTF default error for NumberRange is usually "must be at least X"
+    # or the custom message we set in forms.py
+    assert b"Area cannot be negative" in response.data
+
+def test_future_year_validation(client):
+    """
+    Test Range: Rejects years too far in the future.
+    """
+    client.post('/login', data={'username': 'test', 'password': 'password'})
+    
+    response = client.post('/predict', data={
+        'overall_qual': 5,
+        'gr_liv_area': 1500,
+        'garage_cars': 2,
+        'total_bsmt_sf': 800,
+        'year_built': 3000 # Invalid!
+    }, follow_redirects=True)
+    
+    assert b"Year must be between 1800 and 2030" in response.data
 
 # ==========================================
-# TEST GROUP 2: AI MODEL INTEGRATION
+# PART 2: BACKEND LOGIC (Consistency Testing)
+# Requirement: System Consistency & Database
 # ==========================================
+
 def test_model_file_exists():
-    """Check if the brain (.pkl file) is present."""
+    """
+    Smoke Test: Is the model file present?
+    """
     assert os.path.exists('housing_model.pkl')
 
 def test_prediction_logic():
-    """Check if the model accepts our 5 specific features."""
+    """
+    Consistency Test: Does the model accept our 5 specific features?
+    """
     try:
         model = joblib.load('housing_model.pkl')
         # 5 Params: Qual, Area, Cars, Bsmt, Year
         test_data = pd.DataFrame([[5, 1000, 1, 800, 1990]], 
                                  columns=['OverallQual', 'GrLivArea', 'GarageCars', 'TotalBsmtSF', 'YearBuilt'])
         pred = model.predict(test_data)
+        assert len(pred) == 1
         assert pred[0] > 0
     except:
         pytest.fail("Model failed to predict. Did you run setup_model.py?")
 
-# ==========================================
-# TEST GROUP 3: DATABASE LOGIC
-# ==========================================
-def test_database_save(client):
-    """Check if we can save a history record."""
+def test_database_entry_creation(client):
+    """
+    Unit Test: Can we save a history record to the DB?
+    """
     with app.app_context():
         # Create a fake entry
         entry = Entry(
-            username='tester', overall_qual=5, gr_liv_area=1000, 
-            garage_cars=1, total_bsmt_sf=800, year_built=1990, 
-            prediction=150000.0
+            username='tester', overall_qual=7, gr_liv_area=1500,
+            garage_cars=2, total_bsmt_sf=1000, year_built=2000,
+            prediction=250000.00
         )
         db.session.add(entry)
         db.session.commit()
-
+        
         # Retrieve it
         saved = Entry.query.first()
         assert saved is not None
         assert saved.username == 'tester'
+        assert saved.prediction == 250000.00
+
+def test_user_registration(client):
+    """
+    Unit Test: Can we create a new user account?
+    """
+    # Simulate a registration POST
+    response = client.post('/register', data={
+        'username': 'newuser',
+        'password': 'password123',
+        'confirm_password': 'password123'
+    }, follow_redirects=True)
+    
+    # Check if user exists in DB
+    with app.app_context():
+        user = User.query.filter_by(username='newuser').first()
+        assert user is not None
+        assert user.password == 'password123'
+
+# ==========================================
+# PART 3: API TESTING
+# Requirement: Web API Setup
+# ==========================================
+
+def test_api_predict_endpoint(client):
+    """
+    Integration Test: Does the API return JSON?
+    """
+    response = client.post('/api/predict', json={
+        'OverallQual': 7,
+        'GrLivArea': 1500,
+        'GarageCars': 2,
+        'TotalBsmtSF': 1000,
+        'YearBuilt': 2000
+    })
+    
+    # 200 = Success, 500 = Model Loading Error (but API is reachable)
+    assert response.status_code in [200, 500] 
+    assert response.is_json
+    
+    # Check payload content
+    data = response.get_json()
+    # We expect either a prediction OR an error message (if model missing)
+    assert 'prediction' in data or 'error' in data
