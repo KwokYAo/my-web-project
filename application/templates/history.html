@@ -3,59 +3,139 @@
 {% block content %}
 <div class="page-header">
     <h1 class="page-title">Prediction Archive</h1>
-    <p class="page-subtitle">Manage your past property valuations.</p>
+    <p class="page-subtitle">Analyze your valuation history.</p>
+</div>
+
+<div class="card" style="margin-bottom: 20px; padding: 20px; background: #fff; border-top: 4px solid var(--primary);">
+    <form method="GET" action="{{ url_for('history') }}">
+        <h4 style="margin-top: 0; color: #7f8c8d; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">
+            <i class="ri-filter-3-line"></i> Filter Records
+        </h4>
+        
+        <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
+            
+            <div style="flex: 1; min-width: 100px;">
+                <label style="font-size: 0.8rem; font-weight: bold;">Quality (1-10)</label>
+                <input type="number" name="quality" class="input-field" placeholder="e.g. 5" 
+                       value="{{ request.args.get('quality', '') }}" style="padding: 8px;">
+            </div>
+
+            <div style="flex: 1; min-width: 100px;">
+                <label style="font-size: 0.8rem; font-weight: bold;">Living Area</label>
+                <input type="number" name="area" class="input-field" placeholder="Sq Ft" 
+                       value="{{ request.args.get('area', '') }}" style="padding: 8px;">
+            </div>
+
+            <div style="flex: 1; min-width: 100px;">
+                <label style="font-size: 0.8rem; font-weight: bold;">Garage Cars</label>
+                <input type="number" name="garage" class="input-field" placeholder="Cars" 
+                       value="{{ request.args.get('garage', '') }}" style="padding: 8px;">
+            </div>
+
+            <div style="flex: 1; min-width: 100px;">
+                <label style="font-size: 0.8rem; font-weight: bold;">Basement</label>
+                <input type="number" name="basement" class="input-field" placeholder="Sq Ft" 
+                       value="{{ request.args.get('basement', '') }}" style="padding: 8px;">
+            </div>
+
+            <div style="flex: 1; min-width: 100px;">
+                <label style="font-size: 0.8rem; font-weight: bold;">Year Built</label>
+                <input type="number" name="year" class="input-field" placeholder="Year" 
+                       value="{{ request.args.get('year', '') }}" style="padding: 8px;">
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button type="submit" class="btn btn-primary" style="padding: 10px 20px;">
+                    <i class="ri-search-line"></i> Apply
+                </button>
+                <a href="{{ url_for('history') }}" class="btn" style="background: #eee; color: #333; padding: 10px 15px; text-decoration: none; border-radius: 5px;">
+                    Clear
+                </a>
+            </div>
+        </div>
+        
+        <input type="hidden" name="sort" value="{{ request.args.get('sort', 'date') }}">
+        <input type="hidden" name="order" value="{{ request.args.get('order', 'desc') }}">
+    </form>
 </div>
 
 <div class="card" style="padding: 0; overflow: hidden;">
     <table class="history-table">
-        <thead>
+        <thead style="background: #f8f9fa;">
             <tr>
-                <th style="padding-left: 30px;">Date & Time</th>
-                <th>Property Details</th>
-                <th>Price</th>
+                {% macro sort_link(column, label) %}
+                    <a href="{{ url_for('history', 
+                        sort=column, 
+                        order='asc' if request.args.get('sort') == column and request.args.get('order') == 'desc' else 'desc', 
+                        quality=request.args.get('quality'),
+                        area=request.args.get('area'),
+                        garage=request.args.get('garage'),
+                        basement=request.args.get('basement'),
+                        year=request.args.get('year')
+                    ) }}" 
+                       style="text-decoration: none; color: #2c3e50; display: flex; align-items: center; gap: 5px;">
+                        {{ label }}
+                        {% if request.args.get('sort') == column %}
+                            <i class="ri-arrow-{{ 'up' if request.args.get('order') == 'asc' else 'down' }}-s-fill" style="color: var(--primary);"></i>
+                        {% else %}
+                            <i class="ri-expand-up-down-fill" style="color: #bdc3c7; font-size: 0.8rem;"></i>
+                        {% endif %}
+                    </a>
+                {% endmacro %}
+                
+                <th style="padding: 15px 30px;">{{ sort_link('date', 'Date') }}</th>
+                <th>{{ sort_link('quality', 'Quality') }}</th>
+                <th>{{ sort_link('area', 'Area') }}</th>
+                <th>{{ sort_link('garage', 'Garage') }}</th>
+                <th>{{ sort_link('basement', 'Basement') }}</th>
+                <th>{{ sort_link('year', 'Year') }}</th>
+                <th>{{ sort_link('price', 'Price') }}</th>
                 <th style="text-align: right; padding-right: 30px;">Action</th>
             </tr>
         </thead>
         <tbody>
             {% for row in history %}
-            <tr>
-                <td style="padding-left: 30px; color: #7f8c8d; width: 20%;">
+            <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 15px 30px; color: #7f8c8d;">
                     {{ row.predicted_on.strftime('%Y-%m-%d %H:%M')}}
                 </td>
-                <td style="width: 50%;">
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                        <span style="background: #f4f7f6; padding: 5px 10px; border-radius: 5px; font-size: 0.85rem;">
-                            <strong>Quality:</strong> {{ row['overall_qual'] }}/10
-                        </span>
-                        <span style="background: #f4f7f6; padding: 5px 10px; border-radius: 5px; font-size: 0.85rem;">
-                            <strong>Size:</strong> {{ row['gr_liv_area'] }} sqft
-                        </span>
-                        <span style="background: #f4f7f6; padding: 5px 10px; border-radius: 5px; font-size: 0.85rem;">
-                            <strong>Built:</strong> {{ row['year_built'] }}
-                        </span>
-                        <span style="background: #f4f7f6; padding: 5px 10px; border-radius: 5px; font-size: 0.85rem;">
-                            <strong>Garage:</strong> {{ row['garage_cars'] }} cars
-                        </span>
-                        <span style="background: #f4f7f6; padding: 5px 10px; border-radius: 5px; font-size: 0.85rem;">
-                            <strong>Basement:</strong> {{ row['total_bsmt_sf'] }} sqft
-                        </span>
-                    </div>
-                </td>
-                <td class="prediction-value" style="width: 15%;">
+                
+                <td><span class="badge">{{ row.overall_qual }}/10</span></td>
+                <td>{{ row.gr_liv_area }} sqft</td>
+                <td>{{ row.garage_cars }} cars</td>
+                <td>{{ row.total_bsmt_sf }} sqft</td>
+                <td>{{ row.year_built }}</td>
+                
+                <td class="prediction-value" style="font-weight: bold; color: var(--success);">
                     ${{ "{:,.2f}".format(row['prediction']) }}
                 </td>
-                <td style="text-align: right; padding-right: 30px; width: 15%;">
-                    <a href="{{ url_for('delete_history', id=row['id']) }}" class="btn btn-delete">
-                        <i class="ri-delete-bin-line"></i> Delete
+                
+                <td style="text-align: right; padding-right: 30px;">
+                    <a href="{{ url_for('delete_history', id=row['id']) }}" style="color: var(--danger); text-decoration: none;">
+                        <i class="ri-delete-bin-line"></i>
                     </a>
                 </td>
             </tr>
             {% else %}
             <tr>
-                <td colspan="4" style="text-align: center; padding: 50px; color: #bdc3c7;">No history found.</td>
+                <td colspan="8" style="text-align: center; padding: 50px; color: #bdc3c7;">
+                    No records found.
+                </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
+
+<style>
+    .badge {
+        background: #f4f7f6; 
+        padding: 4px 8px; 
+        border-radius: 4px; 
+        font-weight: 600; 
+        font-size: 0.85rem;
+    }
+    th { font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    td { font-size: 0.95rem; }
+</style>
 {% endblock %}

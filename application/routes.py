@@ -191,8 +191,52 @@ def predict():
 @app.route('/history')
 @login_required
 def history():
-    # [FIX] Query History directly for the current user
-    entries = History.query.filter_by(author=current_user).order_by(History.predicted_on.desc()).all()
+    # 1. Base Query
+    query = History.query.filter_by(author=current_user)
+
+    # --- FILTERING LOGIC ---
+    # We loop through all possible filters dynamically
+    filters = {
+        'quality': 'overall_qual',
+        'area': 'gr_liv_area',
+        'garage': 'garage_cars',
+        'basement': 'total_bsmt_sf',
+        'year': 'year_built'
+    }
+
+    for url_param, db_column in filters.items():
+        value = request.args.get(url_param)
+        if value and value.isdigit():
+            # Apply exact match filter (e.g. WHERE overall_qual = 5)
+            # getattr(History, db_column) gets the actual column object
+            query = query.filter(getattr(History, db_column) == int(value))
+
+    # --- SORTING LOGIC ---
+    sort_col = request.args.get('sort', 'date') # Default to date
+    sort_dir = request.args.get('order', 'desc') # Default to desc
+
+    # Map URL sort keys to Database Columns
+    sort_map = {
+        'date': History.predicted_on,
+        'quality': History.overall_qual,
+        'area': History.gr_liv_area,
+        'garage': History.garage_cars,
+        'basement': History.total_bsmt_sf,
+        'year': History.year_built,
+        'price': History.prediction
+    }
+
+    # Apply Sort
+    if sort_col in sort_map:
+        column = sort_map[sort_col]
+        if sort_dir == 'asc':
+            query = query.order_by(column.asc())
+        else:
+            query = query.order_by(column.desc())
+
+    # Execute
+    entries = query.all()
+    
     return render_template('history.html', history=entries)
 
 @app.route('/delete_history/<int:id>')
