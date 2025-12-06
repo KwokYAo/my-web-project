@@ -252,3 +252,32 @@ def api_predict():
         # Placeholder for API logic
         return jsonify({'status': 'API Working'}), 200
     return jsonify({'error': 'Request must be JSON'}), 415
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# [TEMPORARY FIX] Paste this at the bottom of routes.py
+@app.route('/fix_db')
+def fix_db():
+    from application import db
+    from application.models import User, History
+    
+    # 1. Create the tables
+    db.create_all()
+    
+    # 2. Check if it worked
+    try:
+        user_count = User.query.count()
+        return f"<h1>SUCCESS!</h1><p>Database tables created. Current users: {user_count}</p><p><a href='/register'>Go to Register</a></p>"
+    except Exception as e:
+        return f"<h1>Error</h1><p>{e}</p>"
