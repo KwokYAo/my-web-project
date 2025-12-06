@@ -11,7 +11,7 @@
         <thead>
             <tr>
                 <th style="padding-left: 30px;">Date & Time</th>
-                <th>Details (Summary)</th>
+                <th>Property Details</th>
                 <th>Price</th>
                 <th style="text-align: right; padding-right: 30px;">Action</th>
             </tr>
@@ -19,20 +19,32 @@
         <tbody>
             {% for row in history %}
             <tr>
-                <td style="padding-left: 30px; color: #7f8c8d;">{{ row.predicted_on.strftime('%Y-%m-%d %H:%M')}}</td>
-                <td>
-                    <span style="background: #f4f7f6; padding: 5px 10px; border-radius: 5px; font-size: 0.85rem;">
-                        <strong>Q:</strong> {{ row['overall_qual'] }}
-                    </span>
-                    <span style="background: #f4f7f6; padding: 5px 10px; border-radius: 5px; font-size: 0.85rem;">
-                        <strong>Area:</strong> {{ row['gr_liv_area'] }}
-                    </span>
-                    <span style="background: #f4f7f6; padding: 5px 10px; border-radius: 5px; font-size: 0.85rem;">
-                        <strong>Yr:</strong> {{ row['year_built'] }}
-                    </span>
+                <td style="padding-left: 30px; color: #7f8c8d; width: 20%;">
+                    {{ row.predicted_on.strftime('%Y-%m-%d %H:%M')}}
                 </td>
-                <td class="prediction-value">${{ "{:,.2f}".format(row['prediction']) }}</td>
-                <td style="text-align: right; padding-right: 30px;">
+                <td style="width: 50%;">
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <span style="background: #f4f7f6; padding: 5px 10px; border-radius: 5px; font-size: 0.85rem;">
+                            <strong>Quality:</strong> {{ row['overall_qual'] }}/10
+                        </span>
+                        <span style="background: #f4f7f6; padding: 5px 10px; border-radius: 5px; font-size: 0.85rem;">
+                            <strong>Size:</strong> {{ row['gr_liv_area'] }} sqft
+                        </span>
+                        <span style="background: #f4f7f6; padding: 5px 10px; border-radius: 5px; font-size: 0.85rem;">
+                            <strong>Built:</strong> {{ row['year_built'] }}
+                        </span>
+                        <span style="background: #f4f7f6; padding: 5px 10px; border-radius: 5px; font-size: 0.85rem;">
+                            <strong>Garage:</strong> {{ row['garage_cars'] }} cars
+                        </span>
+                        <span style="background: #f4f7f6; padding: 5px 10px; border-radius: 5px; font-size: 0.85rem;">
+                            <strong>Basement:</strong> {{ row['total_bsmt_sf'] }} sqft
+                        </span>
+                    </div>
+                </td>
+                <td class="prediction-value" style="width: 15%;">
+                    ${{ "{:,.2f}".format(row['prediction']) }}
+                </td>
+                <td style="text-align: right; padding-right: 30px; width: 15%;">
                     <a href="{{ url_for('delete_history', id=row['id']) }}" class="btn btn-delete">
                         <i class="ri-delete-bin-line"></i> Delete
                     </a>

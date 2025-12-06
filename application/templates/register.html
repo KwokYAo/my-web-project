@@ -1,44 +1,70 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register - Ames AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+<body>
+    <div class="login-container">
+        
+        <div class="login-brand-section">
+            <i class="ri-home-gear-fill" style="font-size: 5rem; margin-bottom: 20px;"></i>
+            <h1 style="font-size: 3rem; margin: 0;">AMES</h1>
+            <p style="font-size: 1.2rem; opacity: 0.8;">Advanced Housing Price Predictor</p>
+        </div>
 
-{% block content %}
-<div class="login-container" style="justify-content: center; padding-top: 50px; background: #fff;">
-    <div class="card" style="width: 400px;">
-        <h2 style="text-align: center; color: var(--text-dark);">Create Account</h2>
-        <p style="text-align: center; color: #7f8c8d; margin-bottom: 30px;">Join Ames AI today.</p>
+        <div class="login-form-section">
+            <div class="login-card">
+                <h2 style="margin-bottom: 10px; font-size: 2rem;">Create Account</h2>
+                <p style="color: #7f8c8d; margin-bottom: 30px;">Join Ames AI today.</p>
 
-        <form method="POST">
-            {{ form.hidden_tag() }}
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div style="background: #ffebee; color: #e74c3c; padding: 10px; border-radius: 5px; margin-bottom: 20px; font-size: 0.9rem;">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
 
-            <div class="form-group">
-                {{ form.username.label }}
-                {{ form.username(class="input-field", placeholder="Choose a username") }}
-                {% for error in form.username.errors %}
-                    <span style="color: red; font-size: 0.8rem;">{{ error }}</span>
-                {% endfor %}
+                <form method="POST" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <div class="form-group">
+                        {{ form.username.label }}
+                        {{ form.username(class="input-field", placeholder="Choose a username") }}
+                        {% for error in form.username.errors %}
+                            <span style="color: red; font-size: 0.8rem;">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+
+                    <div class="form-group">
+                        {{ form.password.label }}
+                        {{ form.password(class="input-field", placeholder="Create password") }}
+                        {% for error in form.password.errors %}
+                            <span style="color: red; font-size: 0.8rem;">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 30px;">
+                        {{ form.confirm_password.label }}
+                        {{ form.confirm_password(class="input-field", placeholder="Confirm password") }}
+                        {% for error in form.confirm_password.errors %}
+                            <span style="color: red; font-size: 0.8rem;">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+
+                    {{ form.submit(class="btn btn-primary", value="Register Account") }}
+                </form>
+
+                <p style="margin-top: 20px; text-align: center; font-size: 0.9rem;">
+                    Already have an account? <a href="{{ url_for('login') }}" style="color: var(--primary);">Login here</a>
+                </p>
             </div>
-
-            <div class="form-group">
-                {{ form.password.label }}
-                {{ form.password(class="input-field", placeholder="Create password") }}
-                {% for error in form.password.errors %}
-                    <span style="color: red; font-size: 0.8rem;">{{ error }}</span>
-                {% endfor %}
-            </div>
-
-            <div class="form-group">
-                {{ form.confirm_password.label }}
-                {{ form.confirm_password(class="input-field", placeholder="Confirm password") }}
-                {% for error in form.confirm_password.errors %}
-                    <span style="color: red; font-size: 0.8rem;">{{ error }}</span>
-                {% endfor %}
-            </div>
-
-            {{ form.submit(class="btn btn-primary") }}
-        </form>
-
-        <p style="margin-top: 20px; text-align: center; font-size: 0.9rem;">
-            Already have an account? <a href="{{ url_for('login') }}" style="color: var(--primary);">Login here</a>
-        </p>
+        </div>
     </div>
-</div>
-{% endblock %}
+</body>
+</html>

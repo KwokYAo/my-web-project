@@ -1,26 +1,21 @@
-# application/__init__.py
 from flask import Flask
-import pickle
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager
 
-# run the file routes.py
-
-db = SQLAlchemy()
-
-# create the Flask app
+# Initialize the Flask App
 app = Flask(__name__)
 
-# load configuration from config.cfg
-app.config.from_pyfile('config.cfg')
-app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///housing.db"
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-# new method for SQLAlchemy version 3 onwards
-with app.app_context():
-    db.init_app(app)
-    from .models import Entry
-    db.create_all()
-    db.session.commit()
-    print('Created Database!')
+# [CONFIG] Add your secret key and database URI here
+app.config['SECRET_KEY'] = 'your_secret_key_here' 
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ames.db'
 
+# Initialize Plugins
+db = SQLAlchemy(app)
 
-from application import routes, models
+# [FIX START] Initialize Login Manager ------------------
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'  # Where to send users who aren't logged in
+# [FIX END] ---------------------------------------------
+
+from application import routes

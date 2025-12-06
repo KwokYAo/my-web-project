@@ -1,17 +1,20 @@
 from application import app, db
-from flask import render_template, request, redirect, url_for, session, flash, jsonify
-from application.form import PredictionForm, LoginForm,RegisterForm
-from application.models import Entry,User
+from flask import render_template, request, redirect, url_for, flash, jsonify
+from application.form import PredictionForm, LoginForm, RegisterForm, UpdateAccountForm
+from application.models import History, User
 from datetime import datetime
+from werkzeug.security import generate_password_hash
 import pandas as pd
 import joblib
+from flask_login import login_user, current_user, logout_user, login_required
 
-
+# --- LOAD AI MODEL ---
 try:
     model = joblib.load('housing_model.pkl')
 except:
     model = None
 
+# --- HELPER FUNCTIONS ---
 def add_entry(new_entry):
     try:
         db.session.add(new_entry)
@@ -19,31 +22,27 @@ def add_entry(new_entry):
         return new_entry.id
     except Exception as error:
         db.session.rollback()
-        flash(error, "danger")
+        flash(f"Database Error: {error}", "danger")
         return 0
-
-def get_entries():
-    try:
-        # Fetch entries only for the logged-in user
-        if 'user' in session:
-            entries = Entry.query.filter_by(username=session['user']).order_by(Entry.predicted_on.desc()).all()
-            return entries
-        return []
-    except Exception as error:
-        db.session.rollback()
-        flash(error, "danger")
-        return []
 
 def remove_entry(id):
     try:
-        entry = Entry.query.get(id)
+        # [FIX] Use History instead of Entry
+        entry = History.query.get(id)
         if entry:
+            # [SECURITY] Ensure user can only delete their own history
+            if entry.author != current_user:
+                flash("You are not authorized to delete this.", "danger")
+                return
+            
             db.session.delete(entry)
             db.session.commit()
             flash("Record deleted successfully.", "success")
+        else:
+            flash("Entry not found.", "warning")
     except Exception as error:
         db.session.rollback()
-        flash(error, "danger")
+        flash(f"Error: {error}", "danger")
 
 # --- ROUTES ---
 
@@ -55,6 +54,9 @@ def index():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('predict'))
+        
     form = RegisterForm()
     if form.validate_on_submit():
         try:
@@ -72,36 +74,81 @@ def register():
             
     return render_template('register.html', form=form)
 
-# 2. UPDATED LOGIN ROUTE (Connects to DB)
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('predict'))
+
     form = LoginForm()
     if form.validate_on_submit():
         username = form.username.data
         password = form.password.data
         
-        # Query the Database
         user = User.query.filter_by(username=username).first()
 
-        # Check if user exists AND password matches
         if user and user.password == password:
-            session['user'] = user.username
+            # [FIX] Use official Flask-Login function
+            login_user(user)
             flash(f"Welcome back, {user.username}!", "success")
-            return redirect(url_for('predict'))
+            
+            # Handle "next" page redirect
+            next_page = request.args.get('next')
+            return redirect(next_page) if next_page else redirect(url_for('predict'))
         else:
             flash("Invalid Username or Password", "danger")
             
     return render_template('login.html', form=form)
 
 @app.route('/logout')
+@login_required
 def logout():
-    session.pop('user', None)
+    # [FIX] Use official Flask-Login logout
+    logout_user()
+    flash("You have been logged out.", "info")
     return redirect(url_for('login'))
 
-@app.route('/predict', methods=['GET', 'POST'])
-def predict():
-    if 'user' not in session: return redirect(url_for('login'))
+@app.route('/account', methods=['GET', 'POST'])
+@login_required
+def account():
+    form = UpdateAccountForm()
     
+    if form.validate_on_submit():
+        # Update Username
+        current_user.username = form.username.data
+        
+        # Update Password (ONLY if they typed something)
+        if form.password.data:
+            # Note: In a real app, you should hash this. 
+            # If you aren't using hashing for login yet, keep it simple:
+            current_user.password = form.password.data 
+            
+        db.session.commit()
+        flash('Your account has been updated!', 'success')
+        return redirect(url_for('account'))
+        
+    elif request.method == 'GET':
+        # Pre-fill the form with current data
+        form.username.data = current_user.username
+
+    return render_template('account.html', title='Account', form=form)
+
+@app.route("/account/delete", methods=['POST'])
+@login_required
+def delete_account():
+    user = current_user
+    try:
+        db.session.delete(user)
+        db.session.commit()
+        flash('Your account has been deleted.', 'success')
+        return redirect(url_for('register'))
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error deleting account: {e}", "danger")
+        return redirect(url_for('account'))
+
+@app.route('/predict', methods=['GET', 'POST'])
+@login_required  # [FIX] Protect this route
+def predict():
     form = PredictionForm()
     prediction_text = None
     
@@ -121,18 +168,19 @@ def predict():
             pred_value = model.predict(input_df)[0]
             prediction_text = f"{pred_value:,.2f}"
             
-            # 3. SAVE TO DB (Using SQLAlchemy Model)
-            new_entry = Entry(
-                username=session['user'],
+            # 3. SAVE TO DB (Updated for new Relational DB)
+            entry = History(
+                # [FIX] Removed 'username=' because database handles it via author
                 overall_qual=qual,
                 gr_liv_area=area,
                 garage_cars=cars,
                 total_bsmt_sf=bsmt,
                 year_built=year,
                 prediction=pred_value,
-                predicted_on=datetime.utcnow()
+                predicted_on=datetime.now(),
+                author=current_user  # [FIX] Link to the logged-in user
             )
-            add_entry(new_entry)
+            add_entry(entry)
             
             flash(f"Success! Estimated Value: ${prediction_text}", "success")
         else:
@@ -141,22 +189,22 @@ def predict():
     return render_template('predict.html', form=form, prediction=prediction_text)
 
 @app.route('/history')
+@login_required
 def history():
-    if 'user' not in session: return redirect(url_for('login'))
-    # Use the helper function to get data
-    entries = get_entries()
+    # [FIX] Query History directly for the current user
+    entries = History.query.filter_by(author=current_user).order_by(History.predicted_on.desc()).all()
     return render_template('history.html', history=entries)
 
 @app.route('/delete_history/<int:id>')
+@login_required
 def delete_history(id):
-    if 'user' not in session: return redirect(url_for('login'))
     remove_entry(id)
     return redirect(url_for('history'))
 
-# --- API ROUTE ---
+# --- API ROUTE (Optional) ---
 @app.route('/api/predict', methods=['POST'])
 def api_predict():
     if request.is_json:
-        # ... (Keep your API logic here) ...
+        # Placeholder for API logic
         return jsonify({'status': 'API Working'}), 200
     return jsonify({'error': 'Request must be JSON'}), 415

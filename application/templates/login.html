@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Login - Ames AI</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 </head>
+
 <body>
     <div class="login-container">
         <div class="login-brand-section">
@@ -18,18 +20,18 @@
             <div class="login-card">
                 <h2 style="margin-bottom: 10px; font-size: 2rem;">Welcome Back</h2>
                 <p style="color: #7f8c8d; margin-bottom: 40px;">Please enter your details to sign in.</p>
-                
+
                 <!-- Flash Messages -->
                 {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        {% for category, message in messages %}
-                            <div style="background: {% if category=='danger' %}#ffebee{% else %}#e8f5e9{% endif %}; 
+                {% if messages %}
+                {% for category, message in messages %}
+                <div style="background: {% if category=='danger' %}#ffebee{% else %}#e8f5e9{% endif %}; 
                                         color: {% if category=='danger' %}#e74c3c{% else %}#2ecc71{% endif %}; 
                                         padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                                {{ message }}
-                            </div>
-                        {% endfor %}
-                    {% endif %}
+                    {{ message }}
+                </div>
+                {% endfor %}
+                {% endif %}
                 {% endwith %}
 
                 <!-- WTF Form -->
@@ -40,7 +42,7 @@
                         {{ form.username.label }}
                         {{ form.username(class="input-field", placeholder="e.g., admin") }}
                         {% for error in form.username.errors %}
-                            <span style="color: red; font-size: 0.8rem;">{{ error }}</span>
+                        <span style="color: red; font-size: 0.8rem;">{{ error }}</span>
                         {% endfor %}
                     </div>
 
@@ -48,14 +50,19 @@
                         {{ form.password.label }}
                         {{ form.password(class="input-field", placeholder="Your password") }}
                         {% for error in form.password.errors %}
-                            <span style="color: red; font-size: 0.8rem;">{{ error }}</span>
+                        <span style="color: red; font-size: 0.8rem;">{{ error }}</span>
                         {% endfor %}
                     </div>
 
                     {{ form.submit(class="btn btn-primary") }}
                 </form>
+                <p style="margin-top: 20px; text-align: center; font-size: 0.9rem;">
+                    Don't have an account? <a href="{{ url_for('register') }}" style="color: var(--primary);">Register
+                        here</a>
+                </p>
             </div>
         </div>
     </div>
 </body>
+
 </html>

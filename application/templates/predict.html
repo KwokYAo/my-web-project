@@ -8,73 +8,60 @@
 
 <div style="display: flex; gap: 40px; align-items: flex-start;">
 
-    <!-- LEFT: FORM -->
     <div class="card" style="flex: 2;">
         <h3 class="card-title">
             <i class="ri-file-list-3-line" style="margin-right: 10px; color: var(--primary);"></i>Property Details
         </h3>
 
-        <!-- Display Form Errors -->
-        {% for field, errors in form.errors.items() %}
-        {% for error in errors %}
-        <div style="background: #ffebee; color: var(--danger); padding: 10px; border-radius: 5px; margin-bottom: 10px;">
-            <strong>{{ field }}:</strong> {{ error }}
-        </div>
-        {% endfor %}
+        {% for field_name, errors in form.errors.items() %}
+            {% for error in errors %}
+            <div style="background: #ffebee; color: var(--danger); padding: 10px; border-radius: 5px; margin-bottom: 10px;">
+                <strong>{{ form[field_name].label.text }}:</strong> {{ error }}
+            </div>
+            {% endfor %}
         {% endfor %}
 
-        <!-- Point form to current URL -->
         <form method="POST" novalidate>
-            {{ form.hidden_tag() }} <!-- CSRF TOKEN (Required for security) -->
+            {{ form.hidden_tag() }}
 
-            <!-- 1. Overall Quality -->
             <div class="form-group">
                 <label>
                     {{ form.overall_qual.label }}
-                    <span style="color: var(--primary);"><span id="qualVal">5</span> / 10</span>
+                    <span style="color: var(--primary); font-weight: bold;"><span id="qualVal">5</span> / 10</span>
                 </label>
-                <!-- Render field with specific attributes for slider -->
-                {{ form.overall_qual(type="range", min="1", max="10", value="5",
+                {{ form.overall_qual(type="range", min="1", max="10", value="5", style="width: 100%; cursor: pointer;",
                 oninput="document.getElementById('qualVal').innerText = this.value") }}
-                <div
-                    style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #95a5a6; margin-top: 5px;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #95a5a6; margin-top: 5px;">
                     <span>Poor</span><span>Average</span><span>Excellent</span>
                 </div>
             </div>
 
-            <!-- 2. Living Area -->
             <div class="form-group">
                 {{ form.gr_liv_area.label }}
-                <!-- Passing CSS class to WTF -->
                 {{ form.gr_liv_area(class="input-field", placeholder="e.g. 1500") }}
             </div>
 
             <div style="display: flex; gap: 20px;">
-                <!-- 3. Garage -->
                 <div class="form-group" style="flex: 1;">
                     {{ form.garage_cars.label }}
                     {{ form.garage_cars(class="input-field") }}
                 </div>
 
-                <!-- 4. Basement -->
                 <div class="form-group" style="flex: 1;">
                     {{ form.total_bsmt_sf.label }}
                     {{ form.total_bsmt_sf(class="input-field", placeholder="e.g. 800") }}
                 </div>
             </div>
 
-            <!-- 5. Year Built -->
             <div class="form-group">
                 {{ form.year_built.label }}
                 {{ form.year_built(class="input-field", placeholder="e.g. 1995") }}
             </div>
 
-            <!-- Submit Button -->
             {{ form.submit(class="btn btn-primary", style="margin-top: 10px;") }}
         </form>
     </div>
 
-    <!-- RIGHT: RESULT -->
     <div class="card"
         style="flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: center; min-height: 400px;">
         <h4 style="color: #95a5a6; letter-spacing: 1px;">ESTIMATED VALUE</h4>
