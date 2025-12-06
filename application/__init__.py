@@ -12,7 +12,7 @@ app = Flask(__name__)
 
 # load configuration from config.cfg
 app.config.from_pyfile('config.cfg')
-app.config['SQLALCHEMY_DATABASE_URI'] ="sqlite:///database.db"
+app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///housing.db"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # new method for SQLAlchemy version 3 onwards
 with app.app_context():
