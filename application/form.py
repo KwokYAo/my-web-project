@@ -1,19 +1,30 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, BooleanField, IntegerField, SelectField
-from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError
+from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError, NumberRange
 from flask_login import current_user
 from application.models import User
 
+
 # 1. Prediction Form
 class PredictionForm(FlaskForm):
-    overall_qual = IntegerField("Overall Material Quality", validators=[DataRequired()])
-    gr_liv_area = IntegerField("Living Area (sq ft)", validators=[DataRequired()])
-    garage_cars = SelectField("Garage Capacity", coerce=int, choices=[
-        (0, "No Garage"), (1, "1 Car"), (2, "2 Cars"), (3, "3 Cars"), (4, "4+ Cars")
+    gr_liv_area = IntegerField('Living Area (sq ft)', validators=[
+        DataRequired(), 
+        NumberRange(min=1, message="Area must be greater than 0")
     ])
-    total_bsmt_sf = IntegerField("Total Basement Area (sq ft)", validators=[DataRequired()])
-    year_built = IntegerField("Year Built", validators=[DataRequired()])
-    submit = SubmitField("Calculate Price")
+
+    # Basement: Can be 0 (no basement), but not negative
+    total_bsmt_sf = IntegerField('Total Basement Area (sq ft)', validators=[
+        DataRequired(), 
+        NumberRange(min=0, message="Area cannot be negative")
+    ])
+
+    # Year Built: Must be between 1900 and Today (e.g., 2026)
+    year_built = IntegerField('Year Built', validators=[
+        DataRequired(), 
+        NumberRange(min=1900, max=2026, message="Year must be between 1900 and now")
+    ])
+
+    submit = SubmitField('Calculate Price')
 
 # 2. Registration Form
 class RegisterForm(FlaskForm):
