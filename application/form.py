@@ -37,7 +37,7 @@ class PredictionForm(FlaskForm):
     # --- 5. Year Built ---
     year_built = IntegerField('Year Built', validators=[
         InputRequired(), 
-        NumberRange(min=1900, max=2026, message="Year must be > 1900")
+        NumberRange(min=1900, max=2026, message="Year must be between 1900 to 2026")
     ])
 
     submit = SubmitField('Calculate Price')
