@@ -168,7 +168,7 @@ def predict():
                                 columns=['OverallQual', 'GrLivArea', 'GarageCars', 'TotalBsmtSF', 'YearBuilt'])
         
         if model:
-            pred_value = model.predict(input_df)[0]
+            pred_value = float(model.predict(input_df)[0])
             prediction_text = f"{pred_value:,.2f}"
             
             # 3. SAVE TO DB (Updated for new Relational DB)
