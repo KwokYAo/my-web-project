@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
-import os  # 1. 确保引入 os
+import os  
 
 # 1. Initialize the Flask App
 app = Flask(__name__)
@@ -9,18 +9,23 @@ app = Flask(__name__)
 # [CONFIG]
 app.config.from_pyfile('config.cfg')
 
-# ================= 核心修改区 =================
-# 必须在这里（在初始化 db 之前）决定用哪个数据库
-uri = os.getenv("DATABASE_URI")
+
+uri = os.getenv("DATABASE_URL") 
 
 if uri and uri.startswith("postgres://"):
     uri = uri.replace("postgres://", "postgresql://", 1)
 
-# 如果 Render 给了地址就用 Render 的，否则用本地的 ames.db
 app.config['SQLALCHEMY_DATABASE_URI'] = uri or 'sqlite:///ames.db'
-# ============================================
 
-# 2. Initialize Plugins (这时候它就能读到正确的 URI 了)
+print("====================================")
+if 'sqlite' in app.config['SQLALCHEMY_DATABASE_URI']:
+    print(" WARNING: Using SQLite (Data will be lost!)")
+else:
+    print(" SUCCESS: Using PostgreSQL (Data is safe!)")
+print("Database URI:", app.config['SQLALCHEMY_DATABASE_URI'])
+print("====================================")
+# ========================================
+
 db = SQLAlchemy(app)
 
 # 3. Initialize Login Manager
