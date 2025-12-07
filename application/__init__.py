@@ -26,7 +26,6 @@ from application import routes
 from application.models import User, History
 
 with app.app_context():
-    db.drop_all() 
 
     db.create_all()
     print("-----------------------------------")
