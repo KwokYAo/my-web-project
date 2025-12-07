@@ -1,11 +1,11 @@
+import pandas as pd
+import joblib
 from application import app, db
 from flask import render_template, request, redirect, url_for, flash, jsonify
 from application.form import PredictionForm, LoginForm, RegisterForm, UpdateAccountForm
 from application.models import History, User
 from datetime import datetime
-from werkzeug.security import generate_password_hash
-import pandas as pd
-import joblib
+from werkzeug.security import generate_password_hash ,check_password_hash
 from flask_login import login_user, current_user, logout_user, login_required
 
 # --- LOAD AI MODEL ---
@@ -61,7 +61,8 @@ def register():
     if form.validate_on_submit():
         try:
             # Create new user
-            new_user = User(username=form.username.data, password=form.password.data)
+            hashed_pw = generate_password_hash(form.password.data)
+            new_user = User(username=form.username.data, password=hashed_pw)
             db.session.add(new_user)
             db.session.commit()
             
@@ -86,7 +87,7 @@ def login():
         
         user = User.query.filter_by(username=username).first()
 
-        if user and user.password == password:
+        if user and check_password_hash(user.password, password):
             # [FIX] Use official Flask-Login function
             login_user(user)
             flash(f"Welcome back, {user.username}!", "success")
@@ -107,6 +108,7 @@ def logout():
     flash("You have been logged out.", "info")
     return redirect(url_for('login'))
 
+
 @app.route('/account', methods=['GET', 'POST'])
 @login_required
 def account():
@@ -118,9 +120,9 @@ def account():
         
         # Update Password (ONLY if they typed something)
         if form.password.data:
-            # Note: In a real app, you should hash this. 
-            # If you aren't using hashing for login yet, keep it simple:
-            current_user.password = form.password.data 
+            # [FIX] Hash the new password before saving it to the database
+            hashed_pw = generate_password_hash(form.password.data)
+            current_user.password = hashed_pw
             
         db.session.commit()
         flash('Your account has been updated!', 'success')
@@ -131,6 +133,7 @@ def account():
         form.username.data = current_user.username
 
     return render_template('account.html', title='Account', form=form)
+
 
 @app.route("/account/delete", methods=['POST'])
 @login_required
